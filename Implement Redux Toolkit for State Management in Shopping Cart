@@ -1,0 +1,105 @@
+// === Redux Toolkit Shopping Cart App ===
+import React, { useEffect } from "react";
+import { configureStore, createSlice } from "@reduxjs/toolkit";
+import { Provider, useDispatch, useSelector } from "react-redux";
+
+// 🧠 Step 1: Create cart slice
+const cartSlice = createSlice({
+  name: "cart",
+  initialState: {
+    cartItems: [],
+  },
+  reducers: {
+    addToCart: (state, action) => {
+      const existing = state.cartItems.find((item) => item.name === action.payload.name);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        state.cartItems.push({ ...action.payload, quantity: 1 });
+      }
+    },
+    removeFromCart: (state, action) => {
+      state.cartItems = state.cartItems.filter((item) => item.name !== action.payload);
+    },
+    increaseQty: (state, action) => {
+      const item = state.cartItems.find((i) => i.name === action.payload);
+      if (item) item.quantity += 1;
+    },
+    decreaseQty: (state, action) => {
+      const item = state.cartItems.find((i) => i.name === action.payload);
+      if (item && item.quantity > 1) item.quantity -= 1;
+    },
+  },
+});
+
+const { addToCart, removeFromCart, increaseQty, decreaseQty } = cartSlice.actions;
+
+// 🏬 Step 2: Configure Redux store
+const store = configureStore({
+  reducer: {
+    cart: cartSlice.reducer,
+  },
+});
+
+// 🛍️ Step 3: Product List Component
+const ProductList = () => {
+  const dispatch = useDispatch();
+  const products = [
+    { name: "Laptop", price: 85000 },
+    { name: "Headphones", price: 3499 },
+    { name: "Smartwatch", price: 9999 },
+  ];
+
+  return (
+    <div style={{ textAlign: "center", marginTop: "20px" }}>
+      <h2>🛍️ Available Products</h2>
+      {products.map((p, i) => (
+        <div key={i} style={{ margin: "10px" }}>
+          {p.name} - ₹{p.price}{" "}
+          <button onClick={() => dispatch(addToCart(p))}>Add to Cart</button>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// 🛒 Step 4: Cart Component
+const Cart = () => {
+  const cartItems = useSelector((state) => state.cart.cartItems);
+  const dispatch = useDispatch();
+
+  const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+  return (
+    <div style={{ textAlign: "center", marginTop: "40px" }}>
+      <h2>🛒 Shopping Cart</h2>
+      {cartItems.length === 0 ? (
+        <p>Your cart is empty.</p>
+      ) : (
+        <>
+          {cartItems.map((item, i) => (
+            <div key={i} style={{ margin: "10px" }}>
+              {item.name} - ₹{item.price} | Qty: {item.quantity}{" "}
+              <button onClick={() => dispatch(increaseQty(item.name))}>+</button>
+              <button onClick={() => dispatch(decreaseQty(item.name))}>-</button>
+              <button onClick={() => dispatch(removeFromCart(item.name))}>Remove</button>
+            </div>
+          ))}
+          <h3>Total: ₹{total}</h3>
+        </>
+      )}
+    </div>
+  );
+};
+
+// ⚛️ Step 5: Main App Component
+function App() {
+  return (
+    <Provider store={store}>
+      <ProductList />
+      <Cart />
+    </Provider>
+  );
+}
+
+export default App;
